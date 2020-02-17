@@ -10,13 +10,13 @@ def scrape_all():
     browser = Browser('chrome', 'chromedriver.exe', headless=True)
     news_title, news_paragraph = mars_news(browser)
     data = {
-        "news_title": news_title, 
+        "news_title": news_title,
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemispheres": hemispheres(browser)
         }
-    browser.quit()
     return data
 
 def mars_news(browser):
@@ -72,7 +72,7 @@ def featured_image(browser):
 
     # Use the base URL to create an absolute URL
     img_url = f'https://www.jpl.nasa.gov{img_url_rel}'
- 
+
     return img_url
 
 def mars_facts():
@@ -90,6 +90,43 @@ def mars_facts():
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html()
 
-if __name__ == "__main__":
+def hemispheres(browser):
+    url = ("https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars")
+    browser.visit(url)
+
+    # Click the link, find sample anchor, return href
+    hemisphere_image_urls = []
+    for i in range(4):
+        # Find the elements on each loop to avoid a stale element exception
+        browser.find_by_css("a.product-item h3")[i].click()
+        hemi_data = scrape_hemisphere(browser.html)
+        # Append hemisphere object to list
+        hemisphere_image_urls.append(hemi_data)
+        # Navigate backwards
+        browser.back()
+    return hemisphere_image_urls
+
+def scrape_hemisphere(html_text):
+    # Parse html text
+    hemi_soup = BeautifulSoup(html_text, "html.parser")
+
+    # Adding try/except for error handling
+    try:
+        title_elem = hemi_soup.find("h2", class_="title").get_text()
+        sample_elem = hemi_soup.find("a", text="Sample").get("href")
+    except AttributeError:
+        # Image error will return Non, for better front-end handling
+        title_elem = None
+        sample_elem = None
+
+    hemispheres = {
+        "title": title_elem,
+        "img_url": sample_elem
+    }
+
+    return hemispheres
+
+
+if __name__ == "__main__": 
     # If running as script, print scraped data
     print(scrape_all())

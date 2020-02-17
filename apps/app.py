@@ -1,7 +1,7 @@
 # Import dependencies
 from flask import Flask, render_template
 from flask_pymongo import PyMongo
-import scraping_chall
+import scraping
 
 # Set up Flask
 app = Flask(__name__)
